@@ -69,9 +69,17 @@ async function generateTeleburnAddress(inscriptionId) {
 }
 
 async function inscriptionIdChanged(inscriptionId) {
-    document.getElementById('inscriptionIframe').src = `https://ordinals.com/preview/${inscriptionId}`
-    document.getElementById('inscriptionIframe').style.display = 'block'
-    document.getElementById('teleburnAddress').value = await generateTeleburnAddress(inscriptionId)
+    if (await fetch(`https://ordinals.com/inscription/${inscriptionId}`).then(x => x.status) == 200) {
+        document.getElementById('inscriptionId').classList.remove('is-invalid')
+        document.getElementById('btnSendTeleburnTx').disabled = false
+        document.getElementById('inscriptionIframe').src = `https://ordinals.com/preview/${inscriptionId}`
+        document.getElementById('inscriptionIframe').style.display = 'block'
+        document.getElementById('teleburnAddress').value = await generateTeleburnAddress(inscriptionId)
+    } else {
+        document.getElementById('inscriptionId').classList.add('is-invalid')
+        document.getElementById('inscriptionIframe').style.display = 'none'
+        document.getElementById('btnSendTeleburnTx').disabled = true
+    }
 }
 
 async function teleburn(nft) {
@@ -80,7 +88,6 @@ async function teleburn(nft) {
     document.getElementById('nftImage').alt = `Token ID ${nft.tokenId} from collection ${nft.collection.address}`
     document.getElementById('nftImage').title = document.getElementById('nftImage').alt
     document.getElementById('nftName').textContent = nft.name
-    
 
     document.getElementById('teleburnDialog').showModal()
 }
@@ -90,6 +97,8 @@ async function sendTeleburnTx(inscriptionId) {
     const to = document.getElementById('teleburnAddress').value
     const tokenId = teleburnedNft.tokenId
     const data = new TextEncoder().encode(`teleburned into inscription ${inscriptionId} using teleburn.wtf`)
+
+    alert(`Just making sure that you understand that by confirming the following transaction, you are effectively burning your NFT on ${teleburnedNft.collection.network} and will no longer own it`)
 
     await window.ethereum.request({
         method: 'eth_sendTransaction',
@@ -101,8 +110,7 @@ async function sendTeleburnTx(inscriptionId) {
         }],
     })
 
-    
-window.open(`https://twitter.com/intent/tweet?text=I+just+%40teleburned+${encodeURIComponent(teleburnedNft.name)}+into+an+ordinal+inscription&url=https%3A%2F%2Fteleburn.wtf`, "_blank")
+    window.open(`https://twitter.com/intent/tweet?text=I+just+%40teleburned+${encodeURIComponent(teleburnedNft.name)}+into+an+ordinal+inscription&url=https%3A%2F%2Fteleburn.wtf`, "_blank")
 }
 
 async function main() {
